@@ -86,6 +86,7 @@ These packages from `settings.json` provide additional capabilities:
 | **pi-ralph-loop** | `/ralph` | Autonomous planning and execution loops |
 | **chrome-cdp-skill** | `/skill:chrome-cdp` | Interact with live Chrome browser tabs |
 | **pi-autoresearch** | `/skill:autoresearch` | Metric-driven experiment optimization |
+| **pi-guardrails** | — | Guardrails runtime for pi agent behavior control |
 
 ### From the agent (tool calls)
 
