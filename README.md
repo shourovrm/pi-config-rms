@@ -5,7 +5,7 @@ Personal pi coding agent configuration — extensions, skills, and dependencies.
 ## Install
 
 ```bash
-pi install git:github.com:shourovrm/pi-config-rms
+pi install git:github.com/shourovrm/pi-config-rms
 ```
 
 Pi will clone the repo, install npm dependencies, and load all extensions and skills automatically.
