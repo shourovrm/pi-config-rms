@@ -1,0 +1,42 @@
+{
+  "lastChangelogVersion": "0.74.0",
+  "defaultProvider": "opencode-go",
+  "defaultModel": "opencode-go/deepseek-v4-pro",
+  "defaultThinkingLevel": "high",
+  "enabledModels": [
+    "opencode-go/deepseek-v4-flash",
+    "opencode-go/deepseek-v4-pro",
+    "opencode-go/glm-5.1",
+    "opencode-go/kimi-k2.6",
+    "opencode-go/minimax-m2.7",
+    "opencode-go/qwen3.6-plus",
+    "opencode-go/mimo-v2.5-pro"
+  ],
+  "compaction": {
+    "enabled": true,
+    "reserveTokens": 16384,
+    "keepRecentTokens": 20000
+  },
+  "steeringMode": "all",
+  "followUpMode": "one-at-a-time",
+  "hideThinkingBlock": false,
+  "theme": "light",
+  "packages": [
+    "git:github.com/shourovrm/pi-config-rms",
+    "npm:pi-interactive-shell",
+    "npm:pi-intercom",
+    "git:github.com/unravel-team/dafny-estimation",
+    "git:github.com/vedang/caveman",
+    "git:github.com/vedang/pi-boomerang",
+    "git:github.com/vedang/pi-prompt-history",
+    "git:github.com/vedang/pi-quizme",
+    "git:github.com/vedang/pi-ralph-loop",
+    "git:github.com/vedang/pi-simplify-code",
+    "git:github.com/vedang/visual-explainer",
+    "git:github.com/Whamp/pi-read-map",
+    "git:github.com/pasky/chrome-cdp-skill",
+    "git:github.com/davebcn87/pi-autoresearch",
+    "git:github.com/vedang/humanizer",
+    "git:github.com/vedang/pi-review-code"
+  ]
+}
