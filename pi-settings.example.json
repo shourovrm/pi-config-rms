@@ -34,6 +34,7 @@
     "git:github.com/pasky/chrome-cdp-skill",
     "git:github.com/davebcn87/pi-autoresearch",
     "git:github.com/vedang/humanizer",
-    "git:github.com/vedang/pi-review-code"
+    "git:github.com/vedang/pi-review-code",
+    "git:github.com/mrshu/pi-readline-search"
   ]
 }
