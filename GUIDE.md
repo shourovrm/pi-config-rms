@@ -58,6 +58,34 @@ Or use a chain to automate steps:
 |---------|-------------|
 | `/handoff <goal>` | Transfer current session context to a new session with an AI-generated prompt |
 | `/oracle` | Get a second opinion from another model on your question |
+| `/boomerang <task>` | Run autonomous task with automatic context collapse |
+| `/caveman [lite\|full\|ultra]` | Toggle ultra-compressed communication mode |
+| `/simplify-code` | Simplify changed code without changing behavior |
+| `/ralph <task>` | Autonomous planning loop for multi-step tasks |
+| `/review-code` | Review diffs and provide structured feedback |
+| `/humanize <text>` | Remove AI writing patterns from text |
+| `/quizme` | Quiz yourself on recent code changes |
+| `/explain <topic>` | Generate visual HTML explainer |
+| `/autoresearch` | Run autonomous experiment loop |
+
+### Installed Packages
+
+These packages from `settings.json` provide additional capabilities:
+
+| Package | Command/Shortcut | Purpose |
+|---------|-----------------|---------|
+| **pi-interactive-shell** | `/interactive` | Run other CLI agents (claude, codex, cursor) inside pi |
+| **pi-intercom** | `/skill:pi-intercom` | Coordinate between pi sessions on the same machine |
+| **caveman** | `/caveman`, Ctrl+Shift+C | Ultra-compressed communication mode |
+| **pi-boomerang** | `/boomerang` | Autonomous tasks with context collapse |
+| **pi-simplify-code** | `/simplify-code` | Refactor without changing behavior |
+| **visual-explainer** | `/explain` | Generate HTML diagrams and comparisons |
+| **humanizer** | `/humanize` | Make AI-written text sound natural |
+| **pi-review-code** | `/review-code` | Structured code review |
+| **pi-quizme** | `/quizme` | Recall quizzes on recent changes |
+| **pi-ralph-loop** | `/ralph` | Autonomous planning and execution loops |
+| **chrome-cdp-skill** | `/skill:chrome-cdp` | Interact with live Chrome browser tabs |
+| **pi-autoresearch** | `/skill:autoresearch` | Metric-driven experiment optimization |
 
 ### From the agent (tool calls)
 
@@ -104,6 +132,14 @@ Skills are loaded automatically. The agent uses them when your request matches t
 
 ```
 "Review this blog post draft and remove any AI-sounding language"
+"Humanize this product announcement"
+```
+
+### Pi Configuration
+
+```
+"Use the orchestrator skill to set up session rules"
+"Use the skill-creator to make a new skill for analyzing CSV files"
 ```
 
 ---
@@ -139,6 +175,15 @@ Best for: Fast turnaround when review isn't needed.
 ---
 
 ## Configuration Reference
+
+### Quick setup on a new machine
+
+Copy the example settings and install:
+
+```bash
+cp pi-settings.example.json ~/.pi/agent/settings.json
+pi update --extensions
+```
 
 ### Adding a new model
 

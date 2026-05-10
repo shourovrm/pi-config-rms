@@ -69,7 +69,6 @@ Chain workflows orchestrate multiple agents in sequence:
 | `explanatory-output-style` | Explanatory output formatting for model responses |
 | `context` | Visualize current context usage as a colored grid overlay |
 | `custom-header` | Custom headers in pi sessions |
-| `zz-read-only-mode` | Read-only mode toggle for pi |
 
 ## Skills
 
