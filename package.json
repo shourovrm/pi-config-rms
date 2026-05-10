@@ -6,7 +6,9 @@
   "keywords": ["pi-package"],
   "pi": {
     "extensions": ["./extensions"],
-    "skills": ["./skills"]
+    "skills": ["./skills"],
+    "agents": ["./agents"],
+    "prompts": ["./prompts"]
   },
   "dependencies": {
     "@mozilla/readability": "^0.6.0",

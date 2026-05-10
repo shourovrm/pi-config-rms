@@ -1,94 +1,177 @@
 /**
- * Clipboard Extension
+ * Handoff extension - transfer context to a new focused session
  *
- * Provides a tool that allows the LLM to copy text to the user's clipboard
- * using OSC52 escape sequences. This works across SSH sessions and most
- * modern terminal emulators.
+ * Instead of compacting (which is lossy), handoff extracts what matters
+ * for your next task and creates a new session with a generated prompt.
  *
  * Usage:
- *   Ask the LLM: "write me a draft reply and put it into clipboard!"
+ *   /handoff now implement this for teams as well
+ *   /handoff execute phase one of the plan
+ *   /handoff check other places that need this fix
+ *
+ * The generated prompt appears as a draft in the editor for review/editing.
  */
 
-import { Type } from "@sinclair/typebox";
-import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
+import { complete, type Message, type Model } from "@mariozechner/pi-ai";
+import type {
+  ExtensionAPI,
+  ModelRegistry,
+  SessionEntry,
+} from "@mariozechner/pi-coding-agent";
+import {
+  BorderedLoader,
+  convertToLlm,
+  serializeConversation,
+} from "@mariozechner/pi-coding-agent";
 
-/**
- * Encode text to base64 for OSC52
- */
-function toBase64(text: string): string {
-	return Buffer.from(text, "utf-8").toString("base64");
+const SYSTEM_PROMPT = `You are a context transfer assistant. Given a conversation history and the user's goal for a new thread, generate a focused prompt that:
+
+1. Summarizes relevant context from the conversation (decisions made, approaches taken, key findings)
+2. Lists any relevant files that were discussed or modified
+3. Clearly states the next task based on the user's goal
+4. Is self-contained - the new thread should be able to proceed without the old conversation
+
+Format your response as a prompt the user can send to start the new thread. Be concise but include all necessary context. Do not include any preamble like "Here's the prompt" - just output the prompt itself.
+
+Example output format:
+## Context
+We've been working on X. Key decisions:
+- Decision 1
+- Decision 2
+
+Files involved:
+- path/to/file1.ts
+- path/to/file2.ts
+
+## Task
+[Clear description of what to do next based on user's goal]`;
+
+async function generateHandoffPrompt(
+  model: Model<any>,
+  registry: ModelRegistry,
+  conversationText: string,
+  goal: string,
+  signal: AbortSignal,
+): Promise<string | null> {
+  const auth = await registry.getApiKeyAndHeaders(model);
+  if (!auth.ok || !auth.apiKey) {
+    throw new Error(auth.ok ? `No API key for ${model.provider}` : auth.error);
+  }
+
+  const response = await complete(
+    model,
+    {
+      systemPrompt: SYSTEM_PROMPT,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: `## Conversation History\n\n${conversationText}\n\n## User's Goal for New Thread\n\n${goal}`,
+            },
+          ],
+          timestamp: Date.now(),
+        },
+      ],
+    },
+    { apiKey: auth.apiKey, headers: auth.headers, signal },
+  );
+
+  if (response.stopReason === "aborted") return null;
+
+  return response.content
+    .filter((c): c is { type: "text"; text: string } => c.type === "text")
+    .map((c) => c.text)
+    .join("\n");
 }
 
-/**
- * Copy text to clipboard using OSC52 escape sequence.
- * OSC52 is supported by most modern terminal emulators including:
- * - iTerm2, Kitty, Alacritty, WezTerm, foot, Windows Terminal
- * - tmux (with set-clipboard on), screen (with proper config)
- */
-function copyToClipboard(text: string): void {
-	const base64Text = toBase64(text);
-	// OSC 52 ; c ; <base64-text> ST
-	// \x1b] = OSC (Operating System Command)
-	// 52 = clipboard operation
-	// c = clipboard selection (could also be p for primary, s for secondary)
-	// \x07 = ST (String Terminator) - also \x1b\\ works
-	const osc52 = `\x1b]52;c;${base64Text}\x07`;
-	process.stdout.write(osc52);
-}
+export default function (pi: ExtensionAPI) {
+  pi.registerCommand("handoff", {
+    description: "Transfer context to a new focused session",
+    handler: async (args, ctx) => {
+      if (!ctx.hasUI) {
+        ctx.ui.notify("handoff requires interactive mode", "error");
+        return;
+      }
 
-export default function clipboardExtension(pi: ExtensionAPI): void {
-	pi.registerTool({
-		name: "copy_to_clipboard",
-		label: "Copy to Clipboard",
-		description:
-			"Copy text to the user's system clipboard. Use this when the user asks you to " +
-			"put something in their clipboard, write a draft reply to clipboard, or copy any " +
-			"generated text for easy pasting. The text will be available for pasting immediately.",
-		parameters: Type.Object({
-			text: Type.String({
-				description: "The text to copy to the clipboard",
-			}),
-		}),
-		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
-			const { text } = params as { text: string };
+      if (!ctx.model) {
+        ctx.ui.notify("No model selected", "error");
+        return;
+      }
 
-			if (!text || text.trim().length === 0) {
-				return {
-					content: [{ type: "text", text: "Error: No text provided to copy." }],
-					details: { success: false, error: "empty_text" },
-				};
-			}
+      const goal = args.trim();
+      if (!goal) {
+        ctx.ui.notify("Usage: /handoff <goal for new thread>", "error");
+        return;
+      }
 
-			try {
-				copyToClipboard(text);
+      const branch = ctx.sessionManager.getBranch();
+      const messages = branch
+        .filter(
+          (entry): entry is SessionEntry & { type: "message" } =>
+            entry.type === "message",
+        )
+        .map((entry) => entry.message);
 
-				const preview = text.length > 100 ? `${text.slice(0, 100)}...` : text;
-				const charCount = text.length;
+      if (messages.length === 0) {
+        ctx.ui.notify("No conversation to hand off", "error");
+        return;
+      }
 
-				if (ctx.hasUI) {
-					ctx.ui.notify(`Copied ${charCount} characters to clipboard`, "info");
-				}
+      const conversationText = serializeConversation(convertToLlm(messages));
+      const currentSessionFile = ctx.sessionManager.getSessionFile();
 
-				return {
-					content: [
-						{
-							type: "text",
-							text: `Successfully copied ${charCount} characters to clipboard.\n\nPreview:\n${preview}`,
-						},
-					],
-					details: {
-						success: true,
-						characterCount: charCount,
-						preview,
-					},
-				};
-			} catch (error) {
-				const errorMessage = error instanceof Error ? error.message : "Unknown error";
-				return {
-					content: [{ type: "text", text: `Failed to copy to clipboard: ${errorMessage}` }],
-					details: { success: false, error: errorMessage },
-				};
-			}
-		},
-	});
+      const prompt = await ctx.ui.custom<string | null>(
+        (tui, theme, _kb, done) => {
+          const loader = new BorderedLoader(
+            tui,
+            theme,
+            "Generating handoff prompt...",
+          );
+          loader.onAbort = () => done(null);
+
+          generateHandoffPrompt(
+            ctx.model!,
+            ctx.modelRegistry,
+            conversationText,
+            goal,
+            loader.signal,
+          )
+            .then(done)
+            .catch((err) => {
+              console.error("Handoff generation failed:", err);
+              done(null);
+            });
+
+          return loader;
+        },
+      );
+
+      if (prompt === null) {
+        ctx.ui.notify("Cancelled", "info");
+        return;
+      }
+
+      const edited = await ctx.ui.editor("Edit handoff prompt", prompt);
+      if (edited === undefined) {
+        ctx.ui.notify("Cancelled", "info");
+        return;
+      }
+
+      // Post-switch work must use withSession — old ctx is stale after newSession.
+      const { cancelled } = await ctx.newSession({
+        parentSession: currentSessionFile,
+        withSession: async (newCtx) => {
+          // Set the edited prompt in the new session's editor for submission
+          newCtx.ui.setEditorText(editedPrompt);
+          newCtx.ui.notify("Handoff ready. Submit when ready.", "info");
+        },
+      });
+
+      if (cancelled) {
+        ctx.ui.notify("New session cancelled", "info");
+      }
+    },
+  });
 }
