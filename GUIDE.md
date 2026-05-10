@@ -56,6 +56,10 @@ Or use a chain to automate steps:
 
 | Command | What it does |
 |---------|-------------|
+| `/prompt-history` | Search prompt history in current working directory (Ctrl+R) |
+| `/prompt-history-global` | Search prompt history across all sessions |
+| `/prompt-history-reindex` | Rebuild the prompt history index |
+| `/prompt-history-status` | Show indexed prompt/session counts |
 | `/handoff <goal>` | Transfer current session context to a new session with an AI-generated prompt |
 | `/oracle` | Get a second opinion from another model on your question |
 | `/boomerang <task>` | Run autonomous task with automatic context collapse |

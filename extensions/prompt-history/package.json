@@ -1,0 +1,16 @@
+{
+  "name": "pi-prompt-history",
+  "version": "0.1.0",
+  "description": "Ctrl-R style prompt history search for pi sessions.",
+  "type": "module",
+  "pi": {
+    "extensions": ["./src/index.ts"]
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.9.0"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*"
+  }
+}

@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@mozilla/readability": "^0.6.0",
+    "better-sqlite3": "^12.9.0",
     "diff": "^5.2.0",
     "jsdom": "^27.0.1",
     "linkedom": "^0.16.0",
@@ -21,10 +22,10 @@
     "unpdf": "^1.4.0"
   },
   "peerDependencies": {
-    "@mariozechner/pi-ai": "*",
-    "@mariozechner/pi-agent-core": "*",
-    "@mariozechner/pi-coding-agent": "*",
-    "@mariozechner/pi-tui": "*",
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-agent-core": "*",
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
     "typebox": "*"
   }
 }

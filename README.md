@@ -62,6 +62,7 @@ Chain workflows orchestrate multiple agents in sequence:
 
 | Extension | Description |
 |-----------|-------------|
+| `prompt-history` | Ctrl-R style prompt history search across pi sessions |
 | `handoff` | Transfer session context to a new focused session |
 | `notify` | Desktop notifications for long-running tasks |
 | `status-line` | Custom status line in the pi TUI |
