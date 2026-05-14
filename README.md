@@ -130,15 +130,32 @@ pip install openpyxl
 git pull && ./setup.sh
 ```
 
-## Syncing Changes
+## Contributing Changes Back
 
-Edit locally, then push:
+All config lives in this repo. After making changes, commit and push to share across machines.
+
+### Extensions, agents, skills
+
+Edit files directly in the repo directory, then:
 
 ```bash
-git add -A && git commit -m "Update config" && git push
+git add -A
+git commit -m "feat: describe your change"
+git push
 ```
 
-On other machines:
+### Settings (model, theme, packages)
+
+Your live settings are at `~/.pi/agent/settings.json`. Sync them to the repo template:
+
+```bash
+cp ~/.pi/agent/settings.json pi-settings.example.json
+git add pi-settings.example.json
+git commit -m "chore: sync settings"
+git push
+```
+
+### On other machines
 
 ```bash
 git pull && ./setup.sh
