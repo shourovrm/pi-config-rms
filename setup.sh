@@ -67,8 +67,7 @@ fi
 # ── 4. Install extension dependencies ─────────────────────────────────
 
 info "Installing extension dependencies (npm install)..."
-cd "${REPO_ROOT}"
-if npm install --omit=dev; then
+if npm --prefix "${REPO_ROOT}" install --omit=dev; then
     info "Dependencies installed."
 else
     error "npm install failed. Check output above."
