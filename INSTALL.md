@@ -1,6 +1,6 @@
 # pi-config-rms
 
-Personal pi coding agent configuration — extensions, skills, agents, and settings.
+Personal pi configuration — extensions, skills, agents, and settings.
 
 ## Install
 
@@ -10,26 +10,25 @@ cd pi-config-rms
 ./setup.sh
 ```
 
-**Prerequisites:** [pi](https://github.com/earendil-works/pi-coding-agent) must be installed (`npm install -g @earendil-works/pi-coding-agent`).
+**Prerequisites:** [Node.js](https://nodejs.org) (npm) and [pi](https://github.com/earendil-works/pi-coding-agent) (`npm install -g @earendil-works/pi-coding-agent`).
 
 ## What setup.sh does
 
-1. Backs up existing `~/.pi/agent/settings.json` (if any)
-2. Installs `pi-settings.example.json` as your pi settings
-3. Installs all external pi packages (extensions, skills) via `pi update --extensions`
-4. Ready to run `pi`
+1. Backs up existing `~/.pi/agent/settings.json` (if present)
+2. Runs `npm install` to install extension dependencies (better-sqlite3, turndown, jsdom, etc.)
+3. Copies `pi-settings.example.json` → `~/.pi/agent/settings.json`, replacing the self-referencing package entry with the local clone path
+4. Runs `pi update --extensions` to install all external packages
 
 ## Contents
 
 | Directory | Purpose |
 |-----------|---------|
-| `extensions/` | Custom pi extensions (tools, commands, event hooks) |
-| `agents/` | Custom subagent definitions |
-| `skills/` | Bundled skills (skill-creator, pptx) |
+| `extensions/` | Custom extensions (tools, commands, event hooks) |
+| `agents/` | Subagent definitions |
+| `skills/` | Bundled skills |
 
 ## Update
 
 ```bash
-git pull
-./setup.sh
+git pull && ./setup.sh
 ```

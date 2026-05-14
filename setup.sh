@@ -7,12 +7,13 @@ set -euo pipefail
 # What it does:
 #   1. Detects this repo's absolute path
 #   2. Backs up existing ~/.pi/agent/settings.json (if any)
-#   3. Copies pi-settings.example.json → ~/.pi/agent/settings.json
-#   4. Replaces the self-referencing package entry with the local path
-#   5. Runs pi update --extensions to install all external packages
+#   3. Runs npm install to install extension dependencies (better-sqlite3, etc.)
+#   4. Copies pi-settings.example.json → ~/.pi/agent/settings.json
+#   5. Replaces the self-referencing package entry with the local path
+#   6. Runs pi update --extensions to install all external packages
 #
-# Prerequisites: pi must already be installed on the system.
-# Internet connection required for step 5.
+# Prerequisites: Node.js (npm) and pi must be installed.
+# Internet connection required for steps 3 and 6.
 # ────────────────────────────────────────────────────────────────────────────
 
 RED='\033[0;31m'
@@ -24,11 +25,17 @@ info()  { echo -e "${GREEN}[setup]${NC} $*"; }
 warn()  { echo -e "${YELLOW}[setup]${NC} $*"; }
 error() { echo -e "${RED}[setup]${NC} $*"; }
 
-# ── 0. Prerequisite check ──────────────────────────────────────────────────
+# ── 0. Prerequisite checks ────────────────────────────────────────────
 
 if ! command -v pi &>/dev/null; then
     error "pi not found on PATH. Install pi first:"
     error "  npm install -g @earendil-works/pi-coding-agent"
+    exit 1
+fi
+
+if ! command -v npm &>/dev/null; then
+    error "npm not found on PATH. Install Node.js first:"
+    error "  https://nodejs.org"
     exit 1
 fi
 
@@ -45,16 +52,9 @@ fi
 
 # ── 2. Determine settings destination ──────────────────────────────────────
 
-if [ -n "${PI_SETTINGS_DIR:-}" ]; then
-    PI_SETTINGS_DIR="${PI_SETTINGS_DIR}"
-elif [ -n "${XDG_CONFIG_HOME:-}" ]; then
-    PI_SETTINGS_DIR="${XDG_CONFIG_HOME}/pi/agent"
-else
-    PI_SETTINGS_DIR="${HOME}/.pi/agent"
-fi
-
-mkdir -p "${PI_SETTINGS_DIR}"
-DEST="${PI_SETTINGS_DIR}/settings.json"
+PI_CONF_DIR="${PI_SETTINGS_DIR:-${XDG_CONFIG_HOME:-${HOME}}/.pi/agent}"
+mkdir -p "${PI_CONF_DIR}"
+DEST="${PI_CONF_DIR}/settings.json"
 
 # ── 3. Backup existing settings ────────────────────────────────────────────
 
@@ -64,19 +64,24 @@ if [ -f "${DEST}" ]; then
     warn "Existing settings backed up to: ${BACKUP}"
 fi
 
-# ── 4. Copy settings and replace self-reference with local path ────────────
+# ── 4. Install extension dependencies ─────────────────────────────────
 
-SELF_PACKAGE="git:github.com/shourovrm/pi-config-rms"
+info "Installing extension dependencies (npm install)..."
+cd "${REPO_ROOT}"
+if npm install --omit=dev; then
+    info "Dependencies installed."
+else
+    error "npm install failed. Check output above."
+    exit 1
+fi
 
-# Use sed with a delimiter that won't clash with the path (/ → #)
-# Escape the repo path for sed (replace / with \/)
-LOCAL_PATH="$(echo "${REPO_ROOT}" | sed 's/\//\\\//g')"
-SELF_ESCAPED="$(echo "${SELF_PACKAGE}" | sed 's/\//\\\//g')"
+# ── 5. Copy settings, replacing self-reference with local path ─────────────
 
-sed "s#${SELF_PACKAGE}#${REPO_ROOT}#" "${SETTINGS_EXAMPLE}" > "${DEST}"
+sed "s#git:github.com/shourovrm/pi-config-rms#${REPO_ROOT}#" \
+    "${SETTINGS_EXAMPLE}" > "${DEST}"
 info "Settings written to: ${DEST}"
 
-# ── 5. Install all external packages ────────────────────────────────────────
+# ── 6. Install all external pi packages ────────────────────────────────
 
 info "Installing external packages (pi update --extensions)..."
 if pi update --extensions; then
@@ -92,6 +97,8 @@ fi
 echo ""
 info "Setup complete! Start a new pi session:"
 info "  pi"
-echo ""
-info "To revert to your old settings:"
-info "  cp ${BACKUP:-"<no backup>"} ${DEST}"
+if [ -n "${BACKUP:-}" ]; then
+    echo ""
+    info "To revert to your old settings:"
+    info "  cp ${BACKUP} ${DEST}"
+fi
