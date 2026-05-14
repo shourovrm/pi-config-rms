@@ -15,6 +15,40 @@ cd pi-config-rms
 `setup.sh` installs npm dependencies, copies settings, and fetches all external pi packages.
 See [INSTALL.md](INSTALL.md) for details.
 
+## Update
+
+```bash
+git pull && ./setup.sh
+```
+
+## Contributing Changes Back
+
+After `setup.sh`, pi loads extensions, agents, and skills **directly from this clone directory**.
+That means editing files here is editing your live pi config — no copying needed.
+
+### Extensions, agents, skills
+
+Edit files in the clone directory, then commit and push:
+
+```bash
+git add -A
+git commit -m "feat: describe your change"
+git push
+```
+
+Run `/reload` in pi to pick up changes without restarting.
+
+### Settings (model, theme, packages)
+
+Settings live at `~/.pi/agent/settings.json` (outside the clone). Sync them back:
+
+```bash
+cp ~/.pi/agent/settings.json pi-settings.example.json
+git add pi-settings.example.json
+git commit -m "chore: sync settings"
+git push
+```
+
 ## Quick Start: Using Agents
 
 Agents are subagent role-cards. Use them via the `subagent` tool:
@@ -122,43 +156,6 @@ pip install "markitdown[pptx]" Pillow
 
 # xlsx (Excel)
 pip install openpyxl
-```
-
-## Update
-
-```bash
-git pull && ./setup.sh
-```
-
-## Contributing Changes Back
-
-All config lives in this repo. After making changes, commit and push to share across machines.
-
-### Extensions, agents, skills
-
-Edit files directly in the repo directory, then:
-
-```bash
-git add -A
-git commit -m "feat: describe your change"
-git push
-```
-
-### Settings (model, theme, packages)
-
-Your live settings are at `~/.pi/agent/settings.json`. Sync them to the repo template:
-
-```bash
-cp ~/.pi/agent/settings.json pi-settings.example.json
-git add pi-settings.example.json
-git commit -m "chore: sync settings"
-git push
-```
-
-### On other machines
-
-```bash
-git pull && ./setup.sh
 ```
 
 ## Detailed Guide
