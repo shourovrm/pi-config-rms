@@ -5,10 +5,15 @@ Personal pi coding agent configuration — agents, extensions, skills, prompts, 
 ## Install
 
 ```bash
-pi install git:github.com/shourovrm/pi-config-rms
+git clone https://github.com/shourovrm/pi-config-rms.git
+cd pi-config-rms
+./setup.sh
 ```
 
-Pi will clone the repo, install npm dependencies, and load all agents, extensions, skills, and prompts automatically.
+**Prerequisites:** [Node.js](https://nodejs.org) (npm) and [pi](https://github.com/earendil-works/pi-coding-agent) (`npm install -g @earendil-works/pi-coding-agent`).
+
+`setup.sh` installs npm dependencies, copies settings, and fetches all external pi packages.
+See [INSTALL.md](INSTALL.md) for details.
 
 ## Quick Start: Using Agents
 
@@ -121,10 +126,8 @@ pip install openpyxl
 
 ## Update
 
-To pull the latest config on any machine:
-
 ```bash
-pi update --extensions
+git pull && ./setup.sh
 ```
 
 ## Syncing Changes
@@ -132,14 +135,13 @@ pi update --extensions
 Edit locally, then push:
 
 ```bash
-cd ~/repos/pi-config-rms
 git add -A && git commit -m "Update config" && git push
 ```
 
 On other machines:
 
 ```bash
-pi update --extensions
+git pull && ./setup.sh
 ```
 
 ## Detailed Guide
