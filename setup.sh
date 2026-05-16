@@ -1,103 +1,100 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ── pi-config-rms: one-command setup ──────────────────────────────────────
+# ── pi-config-rms setup ────────────────────────────────────────────────────
+# One command to install this package into ~/.pi/agent/
 # Usage: ./setup.sh
 #
 # What it does:
-#   1. Detects this repo's absolute path
-#   2. Backs up existing ~/.pi/agent/settings.json (if any)
-#   3. Runs npm install to install extension dependencies (better-sqlite3, etc.)
-#   4. Copies pi-settings.example.json → ~/.pi/agent/settings.json
-#   5. Replaces the self-referencing package entry with the local path
-#   6. Runs pi update --extensions to install all external packages
+#   1. Installs npm dependencies for the extensions in this repo
+#   2. Copies pi-settings.example.json → ~/.pi/agent/settings.json
+#      (replacing the self-referencing git entry with this clone's path)
+#   3. Runs pi update --extensions to install all external packages
 #
-# Prerequisites: Node.js (npm) and pi must be installed.
-# Internet connection required for steps 3 and 6.
+# Prerequisites: Node.js (npm) and pi
 # ────────────────────────────────────────────────────────────────────────────
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 info()  { echo -e "${GREEN}[setup]${NC} $*"; }
 warn()  { echo -e "${YELLOW}[setup]${NC} $*"; }
 error() { echo -e "${RED}[setup]${NC} $*"; }
 
-# ── 0. Prerequisite checks ────────────────────────────────────────────
+# ── Prerequisites ──────────────────────────────────────────────────────────
 
-if ! command -v pi &>/dev/null; then
-    error "pi not found on PATH. Install pi first:"
-    error "  npm install -g @earendil-works/pi-coding-agent"
-    exit 1
-fi
+for cmd in pi npm; do
+    if ! command -v "$cmd" &>/dev/null; then
+        error "$cmd not found on PATH. Install it first."
+        exit 1
+    fi
+done
 
-if ! command -v npm &>/dev/null; then
-    error "npm not found on PATH. Install Node.js first:"
-    error "  https://nodejs.org"
-    exit 1
-fi
-
-# ── 1. Detect repo root ────────────────────────────────────────────────────
+# ── Paths ──────────────────────────────────────────────────────────────────
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-info "Repo root: ${REPO_ROOT}"
+SETTINGS_SRC="${REPO_ROOT}/pi-settings.example.json"
 
-SETTINGS_EXAMPLE="${REPO_ROOT}/pi-settings.example.json"
-if [ ! -f "${SETTINGS_EXAMPLE}" ]; then
-    error "pi-settings.example.json not found at ${SETTINGS_EXAMPLE}"
+if [ ! -f "${SETTINGS_SRC}" ]; then
+    error "pi-settings.example.json not found at ${SETTINGS_SRC}"
     exit 1
 fi
 
-# ── 2. Determine settings destination ──────────────────────────────────────
+# Always install to the default pi config location.
+# If you set PI_CODING_AGENT_DIR to a custom path, unset it before running
+# this script, or edit the PI_AGENT_DIR line below.
+PI_AGENT_DIR="${HOME}/.pi/agent"
 
-PI_CONF_DIR="${PI_SETTINGS_DIR:-${XDG_CONFIG_HOME:-${HOME}}/.pi/agent}"
-mkdir -p "${PI_CONF_DIR}"
-DEST="${PI_CONF_DIR}/settings.json"
+if [ -n "${PI_CODING_AGENT_DIR:-}" ] && [ "${PI_CODING_AGENT_DIR}" != "${PI_AGENT_DIR}" ]; then
+    warn "PI_CODING_AGENT_DIR=${PI_CODING_AGENT_DIR}"
+    warn "This script installs to the default location: ${PI_AGENT_DIR}"
+    warn "Unset PI_CODING_AGENT_DIR if you want pi to use this config."
+fi
 
-# ── 3. Backup existing settings ────────────────────────────────────────────
+mkdir -p "${PI_AGENT_DIR}"
+DEST="${PI_AGENT_DIR}/settings.json"
+info "Installing to: ${PI_AGENT_DIR}"
+
+# ── Backup existing settings ───────────────────────────────────────────────
 
 if [ -f "${DEST}" ]; then
     BACKUP="${DEST}.backup-$(date +%Y%m%d-%H%M%S)"
     cp "${DEST}" "${BACKUP}"
-    warn "Existing settings backed up to: ${BACKUP}"
+    warn "Existing settings backed up: ${BACKUP}"
 fi
 
-# ── 4. Install extension dependencies ─────────────────────────────────
+# ── Install extension dependencies ─────────────────────────────────────────
 
-info "Installing extension dependencies (npm install)..."
-if npm --prefix "${REPO_ROOT}" install --omit=dev; then
-    info "Dependencies installed."
-else
-    error "npm install failed. Check output above."
-    exit 1
-fi
+info "Installing extension dependencies..."
+npm --prefix "${REPO_ROOT}" install --omit=dev
+info "Dependencies installed."
 
-# ── 5. Copy settings, replacing self-reference with local path ─────────────
+# ── Write settings ─────────────────────────────────────────────────────────
 
+info "Writing settings..."
 sed "s#git:github.com/shourovrm/pi-config-rms#${REPO_ROOT}#" \
-    "${SETTINGS_EXAMPLE}" > "${DEST}"
-info "Settings written to: ${DEST}"
+    "${SETTINGS_SRC}" > "${DEST}"
+info "Settings written: ${DEST}"
 
-# ── 6. Install all external pi packages ────────────────────────────────
+# ── Install external packages ──────────────────────────────────────────────
 
 info "Installing external packages (pi update --extensions)..."
-if pi update --extensions; then
-    info "All packages installed successfully."
-else
-    error "pi update --extensions failed. Check output above."
-    error "You can re-run it manually: pi update --extensions"
-    exit 1
-fi
+# Override PI_CODING_AGENT_DIR so packages land in the same agent dir
+PI_CODING_AGENT_DIR="${PI_AGENT_DIR}" pi update --extensions
+info "All packages installed."
 
-# ── Done ────────────────────────────────────────────────────────────────────
+# ── Done ───────────────────────────────────────────────────────────────────
 
 echo ""
-info "Setup complete! Start a new pi session:"
+info "Setup complete. Start pi:"
 info "  pi"
+echo ""
+info "If you haven't authenticated with a provider yet:"
+info "  Run pi and use /login, or copy your auth.json from a backup."
 if [ -n "${BACKUP:-}" ]; then
     echo ""
-    info "To revert to your old settings:"
+    info "To restore your previous settings:"
     info "  cp ${BACKUP} ${DEST}"
 fi

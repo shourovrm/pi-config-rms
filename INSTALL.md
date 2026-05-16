@@ -32,3 +32,24 @@ cd pi-config-rms
 ```bash
 git pull && ./setup.sh
 ```
+
+## Troubleshooting
+
+### "pi starts without extensions or models"
+
+Check if `PI_CODING_AGENT_DIR` is set in your environment:
+
+```bash
+echo $PI_CODING_AGENT_DIR
+```
+
+If it points somewhere other than `~/.pi/agent`, pi will use that directory instead.
+Unset it before running `setup.sh` and starting pi:
+
+```bash
+unset PI_CODING_AGENT_DIR
+./setup.sh
+pi
+```
+
+Also check your `PATH` — remove any old `~/.pi-old/agent/bin` entries.
