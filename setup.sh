@@ -78,6 +78,15 @@ sed "s#git:github.com/shourovrm/pi-config-rms#${REPO_ROOT}#" \
     "${SETTINGS_SRC}" > "${DEST}"
 info "Settings written: ${DEST}"
 
+# ── Copy simplify-code config ──────────────────────────────────────────────
+
+SIMPLIFY_SRC="${REPO_ROOT}/simplify-code.json"
+if [ -f "${SIMPLIFY_SRC}" ]; then
+    SIMPLIFY_DEST="${PI_AGENT_DIR}/simplify-code.json"
+    cp "${SIMPLIFY_SRC}" "${SIMPLIFY_DEST}"
+    info "Simplify-code config copied: ${SIMPLIFY_DEST}"
+fi
+
 # ── Install external packages ──────────────────────────────────────────────
 
 info "Installing external packages (pi update --extensions)..."
